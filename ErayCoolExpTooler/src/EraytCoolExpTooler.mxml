@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark"  showStatusBar="false" creationComplete="initCompleteHandler(event)"
+					   xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="1100" minHeight="700" maxWidth="1100" maxHeight="700">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.coolexp.events.ActionEvent;
+			import com.coolexp.items.AddNewItem;
+			import com.coolexp.items.ShowTipsInfoItem;
+			import com.coolexp.manager.AnimationPackager;
+			import com.coolexp.manager.DataModel;
+			import com.coolexp.manager.EventManager;
+			import com.coolexp.manager.ToolerCheck;
+			import com.coolexp.vo.BaseFileVO;
+			import com.coolexp.vo.GroupFileVO;
+			import com.coolexp.vo.NodeVO;
+			import com.coolexp.vo.SimpleFileVO;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.IFlexDisplayObject;
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.utils.StringUtil;
+			private static const fileHeadStrLength:int = 9;
+			private static const FILE_HEAD_STR:String = "ERAYGAMES";
+			private var offset:Point;
+			private var currentRole:UIComponent;
+			private var currentXML:XML;
+			private var g:GroupFileVO;
+			private var basePath:String;
+			private var tipInfoCheck:ShowTipsInfoItem;
+			private var loaderSWF:LoaderInfo;
+			private var isEffect:Boolean;
+			private var ext:String = ".erayswf.dat";
+			
+			private var currentPackageType:int;
+			protected function selecEraySWFHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var file:File = new File();
+				file.addEventListener(Event.SELECT,onSelectHandler);
+				file.browse([new FileFilter("动画文件","*"+ext)]);
+			}
+			private function clear():void{
+				DataModel.getInstance().nodeList = null;
+				nodeList.dataProvider = null;
+				fileNameTxt.text = "";
+				isEffect = false;
+				loaderSWF = null;
+				currentXML = null;
+				container.removeAllElements();
+				currentRole = null;
+				offset = new Point(0,0);
+				g = null;
+				basePath = null;
+			}
+			protected function onSelectHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				clear();
+				var file:File = event.target as File;
+				basePath = file.nativePath.replace(file.name,"");
+				if(file){
+					file.removeEventListener(Event.SELECT,onSelectHandler);
+				}
+				fileNameTxt.text = file.name;
+				var fs:FileStream = new FileStream();
+				var ba:ByteArray = new ByteArray();
+				fs.open(file,FileMode.READ);
+				fs.readBytes(ba);
+				fs.close();
+				praseFile(ba);
+			}
+			private function praseFile(ba:ByteArray):void{
+				var fileVO:BaseFileVO = BaseFileVO.parse(ba);
+				if(fileVO.isGroup==2){
+					parsAnimationFile(fileVO as GroupFileVO);
+				}else{
+					Alert.show("不是动画文件");
+				}
+			}
+			private function parsAnimationFile(fileVO:GroupFileVO):void{
+				g = fileVO;
+				var a:Array = fileVO.fileList;
+				var swfBa:ByteArray = null;
+				for(var i:int = 0,l:int = a.length;i<l;++i){
+					var simpleFileVO:SimpleFileVO = a[i];
+					if(simpleFileVO.fileType==5){
+						currentXML = new XML(simpleFileVO.fileBa.toString());
+					}else{
+						swfBa = simpleFileVO.fileBa;
+					}
+				}
+				var loader:Loader = new Loader();
+				var lc:LoaderContext = new LoaderContext();
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE,onCompleteHandler);
+				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR,loaderIOErrorHandler);
+				lc.allowCodeImport = true;
+				loader.loadBytes(swfBa,lc);
+				var rootName:String = currentXML.name();
+				var offsetX:Number,offsetY:Number;
+				if(rootName=="TextureAtlas"){
+					isEffect = true;
+				}else{
+					isEffect = false;
+				}
+				if(!isEffect){
+					delete currentXML.TextureAtlas.SubTexture;
+					offsetX = currentXML.TextureAtlas.@offsetX;
+					offsetY = currentXML.TextureAtlas.@offsetY;
+					var nodeXML:XML = new XML(currentXML.nodes);
+					DataModel.getInstance().nodeList = convertNodeToList(nodeXML);
+					nodeList.dataProvider = DataModel.getInstance().nodeList;
+				}else{
+					delete currentXML.SubTexture;
+					offsetX = currentXML.@offsetX;
+					offsetY = currentXML.@offsetY;
+				}
+				offsetXValue.text = offsetX.toString();
+				offsetYValue.text = offsetY.toString();
+				offset = new Point(offsetX,offsetY);
+				trace(currentXML.toXMLString());
+			}
+			protected function onCompleteHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				loaderSWF = event.currentTarget as LoaderInfo;
+				if(isEffect){
+					showAnimationByNode("effect");
+				}else{
+					showAnimationByNode("wait");
+				}
+			}
+			
+			private function showAnimationByNode(nodeName:String):void{
+				var OBJ:Class = null;
+				try{
+					OBJ = loaderSWF.applicationDomain.getDefinition("eray_"+nodeName) as Class;
+				}catch(e:Error){
+					Alert.show("没有动画"+nodeName);
+				}
+				if(OBJ){
+					container.removeAllElements();
+					currentRole = new UIComponent();
+					currentRole.addChild(new OBJ());
+					currentRole.x = offset.x;
+					currentRole.y = offset.y;
+					container.addElement(currentRole);
+				}
+			}
+			
+			protected function updateHandler(event:Event):void{
+				if(currentRole){
+					offset.x = currentRole.x = Number(offsetXValue.text);
+					offset.y = currentRole.y = Number(offsetYValue.text);
+				}else{
+					Alert.show("还没初始化");
+				}
+			}
+			private function convertNodeToList(xml:XML):ArrayCollection{
+				var obj:Object;
+				var list:ArrayCollection = new ArrayCollection();
+				if(xml){
+					for each(var node:XML in xml.children()){
+						list.addItem(NodeVO.parse(node));
+					}
+				}
+				return list;
+			}
+			
+			protected function addNewNodeHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(DataModel.getInstance().nodeList){
+					var item:IFlexDisplayObject = PopUpManager.createPopUp(this,AddNewItem,false);
+					PopUpManager.centerPopUp(item);
+				}else{
+					if(isEffect){
+						Alert.show("特效文件不能添加节点");
+					}else{
+						Alert.show("还没有选择文件");
+					}
+				}
+				
+			}
+			
+			protected function initCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				ToolerCheck.getInstance().addEventListener(ActionEvent.CHECK_SOFT_EVENT,checkSoftHandler);
+				tipInfoCheck = PopUpManager.createPopUp(this,ShowTipsInfoItem,false) as ShowTipsInfoItem;
+				PopUpManager.centerPopUp(tipInfoCheck);
+				ToolerCheck.getInstance().check();
+				this.enabled = false;
+			}
+			
+			protected function deleteHanlder(event:ActionEvent):void
+			{
+				// TODO Auto-generated method stub
+				var list:ArrayCollection = DataModel.getInstance().nodeList;
+				if(list){
+					for(var i:int = 0,l:int = list.length;i<l;i++){
+						var nodeVO:NodeVO = list.getItemAt(i) as NodeVO;
+						if(nodeVO.key==event.key){
+							list.removeItemAt(i);
+							return;
+						}
+					}
+				}
+				nodeList.dataProvider = DataModel.getInstance().nodeList;
+			}
+			
+			protected function addItemHanlder(event:ActionEvent):void
+			{
+				// TODO Auto-generated method stub
+				var nodeVO:NodeVO = new NodeVO();
+				nodeVO.key = event.key;
+				nodeVO.blood = event.blood;
+				DataModel.getInstance().nodeList.addItem(nodeVO);
+				nodeList.dataProvider = DataModel.getInstance().nodeList;
+			}
+			protected function exportHandler(event:Event):void{
+				var xmlString:String = "";
+				if(isEffect){
+					xmlString = getEffectXMLString();
+				}else{
+					xmlString = getAnimationXMLString();
+				}
+				saveFile(xmlString);
+			}
+			private function getAnimationXMLString():String{
+				var xmlString:String = "<root>";
+				var imagePath:String = currentXML.TextureAtlas.@imagePath;
+				var t:String = currentXML.TextureAtlas.@t;
+				var isFlash:String = currentXML.TextureAtlas.@isflash;
+				var fv:String = currentXML.TextureAtlas.@fv;
+				
+				xmlString+=('<TextureAtlas imagePath="'+imagePath);
+				xmlString+=('" t="'+t+'" isflash="'+isFlash+'" fv="'+fv+'" offsetX="'+offset.x+'" offsetY="'+offset.y+'"/>');
+				xmlString+=DataModel.getInstance().convertListToXML().toXMLString();
+				xmlString+='</root>';
+				return xmlString;
+			}
+			private function getEffectXMLString():String{
+				var imagePath:String = currentXML.@imagePath;
+				var t:String = currentXML.@t;
+				var xmlString:String = '<TextureAtlas imagePath="'+imagePath+'" t="'+t+'" offsetX="'+offset.x+'" offsetY="'+offset.y+'">';
+				xmlString+='</TextureAtlas>';
+				return xmlString;
+			}
+			private function saveFile(xml:String):void{
+				var fileName:String = StringUtil.trim(fileNameTxt.text);
+				g.fileName = fileName;
+				var a:Array = g.fileList;
+				for(var i:int = 0,l:int = a.length;i<l;++i){
+					var simpleFileVO:SimpleFileVO = a[i];
+					if(simpleFileVO.fileType==5){
+						var ba:ByteArray = new ByteArray();
+						ba.writeUTFBytes(xml);
+						simpleFileVO.fileBa = ba;
+					}else{
+						
+					}
+				}
+				var file:File = new File(basePath+fileName);
+				var fs:FileStream = new FileStream();
+				fs.open(file,FileMode.WRITE);
+				fs.writeBytes(g.toByteArray());
+				fs.close();
+				Alert.show(fileName+"导出成功");
+			}
+			
+			protected function checkSoftHandler(event:ActionEvent):void
+			{
+				// TODO Auto-generated method stub
+				ToolerCheck.getInstance().removeEventListener(ActionEvent.CHECK_SOFT_EVENT,checkSoftHandler);
+				if(event.result==1){
+					this.enabled = true;
+					tipInfoCheck.checkResult(event.result,"通过检查");
+					EventManager.getInstance().addEventListener(ActionEvent.DELETE_ITEM_EVENT,deleteHanlder);
+					EventManager.getInstance().addEventListener(ActionEvent.ADD_ITEM_EVENT,addItemHanlder);
+					EventManager.getInstance().addEventListener(ActionEvent.SEE_NODE_ANI_EVENT,seeAnimationHandler);
+				}else if(event.result==2){
+					tipInfoCheck.checkResult(event.result,"版本检查没有通过,请联系软件作者");
+				}else if(event.result==3){
+					tipInfoCheck.checkResult(event.result,"网络异常，请检查网络");
+				}
+			}
+			
+			protected function seeAnimationHandler(event:ActionEvent):void
+			{
+				// TODO Auto-generated method stub
+				showAnimationByNode(event.key);
+			}
+			
+			protected function loaderIOErrorHandler(event:IOErrorEvent):void
+			{
+				// TODO Auto-generated method stub
+				Alert.show("动画文件异常");
+			}
+			private function disolveHandler(e:Event):void{
+				if(g){
+					var folder:String = g.fileName.replace(ext,"");
+					folder = folder.replace(".erayswf","");
+					var a:Array = g.fileList;
+					var simpleFileVO:SimpleFileVO;
+					for(var i:int = 0,l:int = a.length;i<l;++i){
+						simpleFileVO = a[i];
+						var filePath:String = this.basePath+folder+"\\"+simpleFileVO.fileName;
+						saveDisolveFile(simpleFileVO.fileBa,filePath);
+					}
+					Alert.show("拆分至"+this.basePath+folder);
+				}else{
+					Alert.show("请先选择动画文件");
+				}
+			}
+			private function saveDisolveFile(ba:ByteArray,filePath:String):void{
+				var file:File = new File(filePath);
+				var fs:FileStream = new FileStream();
+				fs.open(file,FileMode.WRITE);
+				fs.writeBytes(ba);
+				fs.close();
+			}
+			private function packageAnimationHandler(val:int):void{
+				this.currentPackageType = val;
+				var file:File = new File();
+				file.addEventListener(Event.SELECT,onSelectAnimationFileHandler);
+				if(currentPackageType==2){
+					file.browseForDirectory("选择文件夹");
+				}else{
+					file.browse([new FileFilter("动画文件","*.swf")]);
+				}
+			}
+			
+			protected function onSelectAnimationFileHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				var file:File = event.target as File;
+				file.removeEventListener(Event.SELECT,onSelectAnimationFileHandler);
+				AnimationPackager.getInstance().packAnimationFile(file,this.currentPackageType,checkDelete.selected);
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Group width="100%" height="100%" y="10">
+		<s:HGroup width="100%" height="100%">
+			<s:VGroup width="75%" height="100%">
+				<s:HGroup width="100%" height="100" >
+					<s:HGroup width="30%" height="100%" paddingLeft="5">
+						<s:Panel width="100%" height="80" title="动画打包">
+							<s:HGroup width="100%" height="100%" verticalAlign="middle"  horizontalAlign="center">
+								<s:CheckBox id="checkDelete" label="删除源文件?" />
+								<s:Button label="单个" width="50" click="packageAnimationHandler(1)"></s:Button>
+								<s:Button label="多个" width="50" click="packageAnimationHandler(2)"></s:Button>
+							</s:HGroup>
+						</s:Panel>
+						
+					</s:HGroup>
+					<s:HGroup width="70%" height="100%" verticalAlign="middle"  horizontalAlign="center">
+						<s:Button label="选择动画文件" click="selecEraySWFHandler(event)" />
+						<s:TextInput id="fileNameTxt" width="200"></s:TextInput>
+						<s:Button label="拆分" click="disolveHandler(event)" />
+						<s:Button label="导出" click="exportHandler(event)"></s:Button>
+					</s:HGroup>
+					
+				</s:HGroup>
+				<s:Panel width="100%" height="100%" >
+					<s:BorderContainer x="410" y="527" id="container" width="10" height="10">
+						<s:backgroundFill> 
+							<s:SolidColor 
+								color="red" 
+								alpha="1"/> 
+						</s:backgroundFill> 
+					</s:BorderContainer>
+				</s:Panel>
+			</s:VGroup>
+			<s:VGroup width="25%" height="100%">
+				<s:Panel width="100%" title="偏移坐标修改" height="100">
+					<s:VGroup width="100%" height="100%" paddingLeft="10" paddingTop="10">
+						<s:HGroup width="100%">
+							<s:Label text="OffsetX:" />
+							<s:TextInput id="offsetXValue" width="50"></s:TextInput>
+						</s:HGroup>
+						<s:HGroup width="100%">
+							<s:Label text="OffsetY:" />
+							<s:TextInput id="offsetYValue" width="50"></s:TextInput>
+						</s:HGroup>
+					</s:VGroup>
+					<s:Button label="更新" x="150" width="50" y="35" click="updateHandler(event)"></s:Button>
+				</s:Panel>
+				<s:VGroup width="100%" height="100%">
+					<s:HGroup width="100%" height="50" verticalAlign="middle" paddingLeft="5">
+						<s:Label text="节点修改" fontSize="24">
+						</s:Label>
+						<s:Button label="添加节点" click="addNewNodeHandler(event)" />
+					</s:HGroup>
+					<s:HGroup width="100%" paddingLeft="5">
+						<s:Label text="Key" width="50" />
+						<s:Label text="Blood" />
+					</s:HGroup>
+					<s:List width="100%" id="nodeList" itemRenderer="com.coolexp.items.NodeItemRender" height="100%">
+						
+					</s:List>
+				</s:VGroup>
+			</s:VGroup>
+		</s:HGroup>
+	</s:Group>
+	
+</s:WindowedApplication>

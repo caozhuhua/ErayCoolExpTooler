@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="true">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.coolexp.events.ActionEvent;
+			import com.coolexp.manager.EventManager;
+			protected function deleteHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var evt:ActionEvent = new ActionEvent(ActionEvent.DELETE_ITEM_EVENT);
+				evt.key = data.key;
+				EventManager.getInstance().dispatchEvent(evt);
+			}
+			
+			protected function seeNodeAnimationHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var evt:ActionEvent = new ActionEvent(ActionEvent.SEE_NODE_ANI_EVENT);
+				evt.key = data.key;
+				EventManager.getInstance().dispatchEvent(evt);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:HGroup width="100" height="30" verticalAlign="middle" paddingLeft="5">
+		
+		<s:TextInput id="key" text="{data.key}" width="60" />
+		<s:TextInput text="{data.blood}" id="blood" width="85" />
+		<s:Button click="deleteHandler(event)" label="删" width="35" />
+		<s:Button click="seeNodeAnimationHandler(event)" label="看" width="35" />
+	</s:HGroup>
+</s:ItemRenderer>
