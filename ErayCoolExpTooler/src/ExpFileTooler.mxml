@@ -29,9 +29,10 @@
 				// TODO Auto-generated method stub
 				var file:File = File(event.target);
 				if(file){
+					var fileName:String = StringUtil.trim(gfileName.text);
 					file.removeEventListener(Event.SELECT,onSelectFolder);
 					FilePackManager.getInstance().packGameRes(file,StringUtil.trim(gfileName.text));
-					Alert.show("打包成功","信息");
+					Alert.show(fileName+"打包成功","信息");
 				}
 			}
 			
