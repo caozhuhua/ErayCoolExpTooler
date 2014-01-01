@@ -1,6 +1,7 @@
 package com.coolexp.manager
 {
 	import com.coolexp.vo.BaseFileVO;
+	import com.coolexp.vo.FileTypeVO;
 	
 	import flash.events.EventDispatcher;
 	import flash.events.IEventDispatcher;
@@ -17,7 +18,7 @@ package com.coolexp.manager
 		private static var _instance:AnimationPackager;
 		private var pckType:int;
 		private var isDel:Boolean;
-		private static var fileId:int = 10001;
+		public var fileId:int = 10001;
 		public function AnimationPackager(target:IEventDispatcher=null)
 		{
 			super(target);
@@ -31,26 +32,34 @@ package com.coolexp.manager
 		public function packAnimationFile(file:File,type:int,isDeleteOriginal:Boolean):void{
 			pckType = type;
 			isDel = isDeleteOriginal;
+			var isPack:Boolean = false;
 			if(pckType==1){
-				analyseFile(file);
+				isPack = analyseFile(file);
+				if(isPack){
+					Alert.show("打包成功");
+				}
 			}else{
 				var b:Array = [];
 				analyseDic(file,b);
 				var f:File;
 				for(var i:int = 0,l:int = b.length;i<l;++i){
 					f = b[i];
-					analyseFile(f);
+					isPack = analyseFile(f);
+					if(!isPack){
+						return;
+					}
 				}
+				Alert.show("打包成功");
 			}
-			Alert.show("打包成功");
+//			Alert.show("打包成功");
 		}
-		private function analyseFile(file:File):void{
+		private function analyseFile(file:File):Boolean{
 			var prefixPath:String = file.nativePath.replace(file.name, "");
 			var prefixName:String = file.name.replace(file.type, "");
 			var xmlFile:File = new File(((prefixPath + prefixName) + ".xml"));
 			if(xmlFile.exists){
-				var swfBa:ByteArray = getFileData(file);
-				var xmlBa:ByteArray = getFileData(xmlFile);
+				var swfBa:ByteArray = FilePackManager.getInstance().getFileData(file);
+				var xmlBa:ByteArray = FilePackManager.getInstance().getFileData(xmlFile);
 				if(isDel){
 					file.deleteFile();
 					xmlFile.deleteFile();
@@ -58,8 +67,9 @@ package com.coolexp.manager
 				saveAnimationFile(prefixPath,prefixName,swfBa,xmlBa);
 			}else{
 				Alert.show(prefixName+".XML文件不存在");
+				return false;
 			}
-			
+			return true;
 		}
 		private function saveAnimationFile(prefixPath:String,fileName:String,swfData:ByteArray,xmlData:ByteArray):void{
 //			var fileType:int = ba.readUnsignedInt();
@@ -68,14 +78,14 @@ package com.coolexp.manager
 //			var isGroup:int = ba.readUnsignedInt();
 			
 			var ba:ByteArray = new ByteArray();
-			ba.writeUnsignedInt(26);
-			ba.writeUnsignedInt(AnimationPackager.fileId++);
+			ba.writeUnsignedInt(FileTypeVO.ANI_2_TYPE);
+			ba.writeUnsignedInt(this.fileId++);
 			ba.writeUTF(fileName+".erayswf");
 			ba.writeUnsignedInt(2);
 			ba.writeUnsignedInt(2);
 			
-			var xmlFileBa:ByteArray = encodeFile(xmlData,5,AnimationPackager.fileId++,fileName+".xml",1);
-			var swfFileBa:ByteArray = encodeFile(swfData,1,AnimationPackager.fileId++,fileName+".swf",1);
+			var xmlFileBa:ByteArray = encodeFile(xmlData,5,this.fileId++,fileName+".xml",1);
+			var swfFileBa:ByteArray = encodeFile(swfData,1,this.fileId++,fileName+".swf",1);
 			ba.writeUnsignedInt(xmlFileBa.length);
 			ba.writeBytes(xmlFileBa);
 			ba.writeUnsignedInt(swfFileBa.length);
@@ -110,15 +120,7 @@ package com.coolexp.manager
 			return fileBa;
 		}
 									
-		private function getFileData(file:File):ByteArray{
-			var fs:FileStream = new FileStream();
-			fs.open(file,FileMode.READ);
-			var ba:ByteArray = new ByteArray();
-			fs.readBytes(ba);
-			fs.close();
-			ba.position = 0;
-			return ba;
-		}
+	
 		private function analyseDic(file:File,a:Array):void{
 			var b:Array = file.getDirectoryListing();
 			var f:File;

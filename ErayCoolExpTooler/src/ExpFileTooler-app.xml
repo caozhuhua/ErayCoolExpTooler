@@ -15,19 +15,19 @@
 
 	<!-- A universally unique application identifier. Must be unique across all AIR applications.
 	Using a reverse DNS-style name as the id is recommended. (Eg. com.example.ExampleApplication.) Required. -->
-	<id>com.eray.AnimationTooler</id>
+	<id>com.eray.coolexp.ExpFileTooler</id>
 
 	<!-- Used as the filename for the application. Required. -->
-	<filename>EraytAnimationExpTooler</filename>
+	<filename>ExpFileTooler</filename>
 
 	<!-- The name that is displayed in the AIR application installer. 
 	May have multiple values for each language. See samples or xsd schema file. Optional. -->
-	<name>动画查看编辑工具</name>
+	<name>ExpFileTooler</name>
 	
 	<!-- A string value of the format <0-999>.<0-999>.<0-999> that represents application version which can be used to check for application upgrade. 
 	Values can also be 1-part or 2-part. It is not necessary to have a 3-part value.
 	An updated version of application must have a versionNumber value higher than the previous version. Required for namespace >= 2.5 . -->
-	<versionNumber>1.0.3</versionNumber>
+	<versionNumber>1.0.0</versionNumber>
 		         
 	<!-- A string value (such as "v1", "2.5", or "Alpha 1") that represents the version of the application, as it should be shown to users. Optional. -->
 	<!-- <versionLabel></versionLabel> -->
@@ -67,7 +67,6 @@
 		<!-- <maximizable></maximizable> -->
 		<maximizable>false</maximizable>
 		<resizable>false</resizable>
-
 		<!-- Whether the user can resize the window. Optional. Default true. -->
 		<!-- <resizable></resizable> -->
 
@@ -113,9 +112,10 @@
 
 		<!-- Display Resolution for the app (either "standard" or "high"). Optional, OSX-only. Default "standard" -->
 		<!-- <requestedDisplayResolution></requestedDisplayResolution> -->
-	<autoOrients>false</autoOrients>
+	<autoOrients>true</autoOrients>
         <fullScreen>false</fullScreen>
         <visible>false</visible>
+        <softKeyboardBehavior>none</softKeyboardBehavior>
     </initialWindow>
 
 	<!-- We recommend omitting the supportedProfiles element, -->
@@ -131,21 +131,12 @@
 
 	<!-- The subpath of the standard default installation location to use. Optional. -->
 	<!-- <installFolder></installFolder> -->
-	<installFolder>ErayCoolExpTooler/Animation</installFolder>
+
 	<!-- The subpath of the Programs menu to use. (Ignored on operating systems without a Programs menu.) Optional. -->
 	<!-- <programMenuFolder></programMenuFolder> -->
-	<programMenuFolder>ErayTooler</programMenuFolder>
 
 	<!-- The icon the system uses for the application. For at least one resolution,
 	specify the path to a PNG file included in the AIR package. Optional. -->
-	<icon>
-		<image16x16>assets/Icon16.png</image16x16>
-		<image32x32>assets/Icon32.png</image32x32>
-		<image48x48>assets/Icon48.png</image48x48>
-		<image57x57>assets/Icon57.png</image57x57>
-		<image76x76>assets/Icon76.png</image76x76>
-		<image152x152>assets/Icon152.png</image152x152>
-	</icon>
 	<!-- <icon>
 		<image16x16></image16x16>
 		<image29x29></image29x29>

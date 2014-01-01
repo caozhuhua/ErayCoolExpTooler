@@ -29,5 +29,15 @@ package com.coolexp.vo
 			tempBa.writeBytes(ba);
 			return tempBa;
 		}
+		public static function parseFile(fileName:String,fileId:int,fileType:int,fileList:Array):GroupFileVO{
+			var g:GroupFileVO = new GroupFileVO();
+			g.fileName = fileName;
+			g.fileId = fileId;
+			g.fileType = fileType;
+			g.fileNum = fileList.length;
+			g.fileList = fileList;
+			g.isGroup = FileTypeVO.IS_GROUP;
+			return g;
+		}
 	}
 }

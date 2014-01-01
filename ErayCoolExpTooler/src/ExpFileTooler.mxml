@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark"  showStatusBar="false" creationComplete="initWindowHandler(event)"
+					   xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="1100" minHeight="700" maxWidth="1100" maxHeight="700">
+	<fx:Script>
+		<![CDATA[
+			import com.coolexp.manager.FilePackManager;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.utils.StringUtil;
+			
+			protected function initWindowHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			
+			protected function packInitGameRes(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var file:File = new File();
+				file.addEventListener(Event.SELECT,onSelectFolder);
+				file.browseForDirectory("选择资源文件夹");
+			}
+			
+			protected function onSelectFolder(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				var file:File = File(event.target);
+				if(file){
+					file.removeEventListener(Event.SELECT,onSelectFolder);
+					FilePackManager.getInstance().packGameRes(file,StringUtil.trim(gfileName.text));
+					Alert.show("打包成功","信息");
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:Panel width="200" height="100" title="打包游戏初始化资源">
+		<s:TextInput x="10" y="10" width="180" text="GameResdata.dat" id="gfileName" />
+		<s:Button x="120" y="40" click="packInitGameRes(event)" label="打包" />
+		
+	</s:Panel>
+</s:WindowedApplication>

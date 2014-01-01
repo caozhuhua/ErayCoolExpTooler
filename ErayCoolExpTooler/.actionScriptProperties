@@ -17,6 +17,9 @@
     <application path="EraytCoolExpTooler.mxml">
       <airExcludes/>
     </application>
+    <application path="ExpFileTooler.mxml">
+      <airExcludes/>
+    </application>
   </applications>
   <modules/>
   <buildCSSFiles/>
