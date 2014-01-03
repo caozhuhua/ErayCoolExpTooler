@@ -29,6 +29,13 @@ package com.coolexp.manager
 			}
 			return _instance;
 		}
+		/**
+		 * 
+		 * @param file
+		 * @param type 1，打包单个，2，打包多个
+		 * @param isDeleteOriginal
+		 * 
+		 */		
 		public function packAnimationFile(file:File,type:int,isDeleteOriginal:Boolean):void{
 			pckType = type;
 			isDel = isDeleteOriginal;
@@ -66,7 +73,7 @@ package com.coolexp.manager
 				}
 				saveAnimationFile(prefixPath,prefixName,swfBa,xmlBa);
 			}else{
-				Alert.show(prefixName+".XML文件不存在");
+				Alert.show(prefixName+".xml文件不存在");
 				return false;
 			}
 			return true;
@@ -103,6 +110,13 @@ package com.coolexp.manager
 			fs.close();
 		}
 		private function encodeFile(byteArray:ByteArray,fileType:int,fileId:int,fileName:String,isGroup:int,compress:int = 2,compressType:int=0,groupType:int = 1):ByteArray{
+			byteArray.position = 0;
+			if(byteArray.position>BaseFileVO.fileHeadStrLength){
+				var fileHeadString:String = ba.readUTFBytes(BaseFileVO.fileHeadStrLength);
+				if(fileHeadString==BaseFileVO.FILE_HEAD_STR){
+					return byteArray;
+				}
+			}
 			var ba:ByteArray = new ByteArray();
 			ba.writeUnsignedInt(fileType);
 			ba.writeUnsignedInt(fileId);

@@ -19,7 +19,7 @@ package com.coolexp.vo
 		/**
 		 *1,为不组合，2为组合 
 		 */		
-		public var isGroup:int;
+		public var isGroup:int = 1;
 		public function toByteArray():ByteArray{
 			return null;
 		}

@@ -131,10 +131,11 @@
 
 	<!-- The subpath of the standard default installation location to use. Optional. -->
 	<!-- <installFolder></installFolder> -->
-
+	<installFolder>ErayCoolExpTooler/FileTooler</installFolder>
 	<!-- The subpath of the Programs menu to use. (Ignored on operating systems without a Programs menu.) Optional. -->
 	<!-- <programMenuFolder></programMenuFolder> -->
 
+	<programMenuFolder>ErayTooler</programMenuFolder>
 	<!-- The icon the system uses for the application. For at least one resolution,
 	specify the path to a PNG file included in the AIR package. Optional. -->
 	<!-- <icon>
@@ -161,7 +162,14 @@
 		<image732x412></image732x412>
 		<image1024x1024></image1024x1024>
 	</icon> -->
-
+	<icon>
+		<image16x16>assets/Icons/Icon16.png</image16x16>
+		<image32x32>assets/Icons/Icon32.png</image32x32>
+		<image48x48>assets/Icons/Icon48.png</image48x48>
+		<image57x57>assets/Icons/Icon57.png</image57x57>
+		<image76x76>assets/Icons/Icon76.png</image76x76>
+		<image152x152>assets/Icons/Icon152.png</image152x152>
+	</icon>
 	<!-- Whether the application handles the update when a user double-clicks an update version
 	of the AIR file (true), or the default AIR application installer handles the update (false).
 	Optional. Default false. -->

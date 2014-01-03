@@ -75,7 +75,14 @@ package com.coolexp.vo
 			fileVO.isCompress = 2;
 			fileVO.compressType = 0;
 			fileVO.groupType = 1;
-			fileVO.fileBa = FilePackManager.getInstance().getFileData(f);
+			var ba:ByteArray = FilePackManager.getInstance().getFileData(f);
+			ba.position = 0;
+			var isEn:Boolean = FilePackManager.getInstance().isEncode(ba);
+			if(isEn){
+				return null;
+			}
+		
+			fileVO.fileBa = ba;
 			fileVO.fileId = AnimationPackager.getInstance().fileId++;
 			return fileVO;
 		}
