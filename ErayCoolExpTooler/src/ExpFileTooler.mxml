@@ -6,6 +6,8 @@
 		<![CDATA[
 			import com.coolexp.manager.AnimationPackager;
 			import com.coolexp.manager.FilePackManager;
+			import com.coolexp.manager.SWFHelperManager;
+			import com.coolexp.vo.KeyVO;
 			
 			import mx.controls.Alert;
 			import mx.events.FlexEvent;
@@ -111,30 +113,57 @@
 				}
 			}
 			
+			protected function unknowSWF(val:int):void
+			{
+				// TODO Auto-generated method stub
+				SWFHelperManager.getInstance().unKnowSWF(val,KeyVO.create(int(key_1.text),int(key_2.text)));
+			}
+			
 		]]>
 	</fx:Script>
-	
-	<s:Panel width="200" height="100" title="打包游戏初始化资源">
-		<s:TextInput x="10" y="10" width="180" text="GameResdata.dat" id="gfileName" />
-		<s:Button x="120" y="40" click="packInitGameRes(event)" label="打包" />
-	</s:Panel>
-	<s:Panel x="240" width="200" height="100" title="加密文件">
-		<s:CheckBox label="删除源文件"   y="10" x="20" id="selectCK" selected="true" />
-		<s:Button x="20" y="40" click="packageFileHandler(1)" label="单个文件" />
-		<s:Button x="120" y="40" click="packageFileHandler(2)" label="多个文件" />
-	</s:Panel>
-	<s:Panel x="460" width="200" height="100" title="重命名文件">
-		<s:TextInput x="20" y="10" width="80" text=".dat" id="extName" />
-		<s:Button x="20" y="40" click="reNameFileHandler(1)" label="单文件" />
-		<s:Button x="120" y="40" click="reNameFileHandler(2)" label="多文件" />
-	</s:Panel>
-	<s:Panel x="680" width="200" height="100" title="打包动画">
-		<s:CheckBox label="删除源文件"   y="10" x="20" id="selectACK" selected="true" />
-		<s:Button x="20" y="40" click="packAnimation(1)" label="单文件" />
-		<s:Button x="120" y="40" click="packAnimation(2)" label="多文件" />
-	</s:Panel>
-	<s:Panel width="200" height="100" y="110" title="解密资源">
-		<s:CheckBox label="删除源文件"   y="10" x="20" id="selectAAACK" selected="true" />
-		<s:Button x="120" y="40" click="unEncode()" label="选择" />
-	</s:Panel>
+	<s:HGroup width="100%" height="100%" paddingLeft="5" paddingTop="5" paddingBottom="5" paddingRight="5">
+		<s:BorderContainer width="100%" height="100%" borderVisible="false">
+			<s:Panel width="200" height="100" title="打包游戏初始化资源">
+				<s:TextInput x="10" y="10" width="180" text="GameResdata.dat" id="gfileName" />
+				<s:Button x="120" y="40" click="packInitGameRes(event)" label="打包" />
+			</s:Panel>
+			<s:Panel x="240" width="200" height="100" title="加密文件">
+				<s:CheckBox label="删除源文件"   y="10" x="20" id="selectCK" selected="true" />
+				<s:Button x="20" y="40" click="packageFileHandler(1)" label="单个文件" />
+				<s:Button x="120" y="40" click="packageFileHandler(2)" label="多个文件" />
+			</s:Panel>
+			<s:Panel x="460" width="200" height="100" title="重命名文件">
+				<s:TextInput x="20" y="10" width="80" text=".dat" id="extName" />
+				<s:Button x="20" y="40" click="reNameFileHandler(1)" label="单文件" />
+				<s:Button x="120" y="40" click="reNameFileHandler(2)" label="多文件" />
+			</s:Panel>
+			<s:Panel x="680" width="200" height="100" title="打包动画">
+				<s:CheckBox label="删除源文件"   y="10" x="20" id="selectACK" selected="true" />
+				<s:Button x="20" y="40" click="packAnimation(1)" label="单文件" />
+				<s:Button x="120" y="40" click="packAnimation(2)" label="多文件" />
+			</s:Panel>
+			<s:Panel width="200" height="100" y="110" title="解密资源">
+				<s:CheckBox label="删除源文件"   y="10" x="20" id="selectAAACK" selected="true" />
+				<s:Button x="120" y="40" click="unEncode()" label="选择" />
+			</s:Panel>
+			<s:Panel width="240" height="150" y="110" x="240" title="加密SWF">
+				<s:VGroup width="100%" height="100%" paddingLeft="5" paddingTop="5">
+					<s:HGroup width="100%" height="30">
+						<s:Label text="Key1:" paddingTop="5" width="30" />
+						<s:TextInput text="2" id="key_1"  width="105" />
+					</s:HGroup>
+					<s:HGroup width="100%" height="30">
+						<s:Label text="Key2:" paddingTop="5" width="30" />
+						<s:TextInput text="3" id="key_2" width="105" />
+					</s:HGroup>
+					<s:HGroup width="100%" paddingLeft="35">
+						<s:Button label="加密" width="50" click="unknowSWF(1)" />
+						<s:Button label="解密" width="50" click="unknowSWF(0)" />
+					</s:HGroup>
+				</s:VGroup>
+			</s:Panel>
+			
+		</s:BorderContainer>
+		
+	</s:HGroup>
 </s:WindowedApplication>
