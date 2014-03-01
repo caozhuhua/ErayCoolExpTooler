@@ -45,7 +45,7 @@ package com.coolexp.vo
 			tempBa.writeBytes(ba);
 			return tempBa;
 		}
-		public static function parseFile(f:File):SimpleFileVO{
+		public static function parseFile(f:File):*{
 			var fileVO:SimpleFileVO = new SimpleFileVO();
 			var ext:String = String(f.extension).toLowerCase();
 			var index:int = FILE_LIST.indexOf(ext);
@@ -79,7 +79,7 @@ package com.coolexp.vo
 			ba.position = 0;
 			var isEn:Boolean = FilePackManager.getInstance().isEncode(ba);
 			if(isEn){
-				return null;
+				return ba;
 			}
 		
 			fileVO.fileBa = ba;

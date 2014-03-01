@@ -11,6 +11,7 @@ package com.coolexp.manager
 	import flash.utils.ByteArray;
 	
 	import mx.controls.Alert;
+	import mx.events.CloseEvent;
 	
 	
 	public class AnimationPackager extends EventDispatcher
@@ -29,6 +30,7 @@ package com.coolexp.manager
 			}
 			return _instance;
 		}
+		private var _file:File;
 		/**
 		 * 
 		 * @param file
@@ -41,10 +43,19 @@ package com.coolexp.manager
 			isDel = isDeleteOriginal;
 			var isPack:Boolean = false;
 			if(pckType==1){
-				isPack = analyseFile(file);
-				if(isPack){
-					Alert.show("打包成功");
+				var prefixPath:String = file.nativePath.replace(file.name, "");
+				var prefixName:String = file.name.replace(file.type, "");
+				var ff:File = new File(prefixPath+prefixName+ERAYSWF_DAT);
+				if(ff.exists){
+					_file = file;
+					Alert.show("是否要替换已经存在的文件"+prefixName,"提示",Alert.YES|Alert.NO,null,confirmOvertHandler);
+				}else{
+					packOneFile(file);
 				}
+//				isPack = analyseFile(file);
+//				if(isPack){
+//					Alert.show("打包成功");
+//				}
 			}else{
 				var b:Array = [];
 				analyseDic(file,b);
@@ -59,6 +70,19 @@ package com.coolexp.manager
 				Alert.show("打包成功");
 			}
 //			Alert.show("打包成功");
+		}
+		private function confirmOvertHandler(e:CloseEvent):void{
+			if(e.detail==Alert.YES){
+				packOneFile(_file);
+			}
+		}
+		private function packOneFile(file:File):void{
+			var isPack:Boolean = false;
+			isPack = analyseFile(file);
+			_file = null;
+			if(isPack){
+				Alert.show("打包成功");
+			}
 		}
 		private function analyseFile(file:File):Boolean{
 			var prefixPath:String = file.nativePath.replace(file.name, "");
@@ -103,12 +127,13 @@ package com.coolexp.manager
 			fileBa.writeUnsignedInt(ba.length);
 			fileBa.writeBytes(ba);
 			
-			var file:File = new File(prefixPath+fileName+".erayswf.dat");
+			var file:File = new File(prefixPath+fileName+ERAYSWF_DAT);
 			var fs:FileStream = new FileStream();
 			fs.open(file,FileMode.WRITE);
 			fs.writeBytes(fileBa);
 			fs.close();
 		}
+		private static const ERAYSWF_DAT:String = ".erayswf.dat";
 		private function encodeFile(byteArray:ByteArray,fileType:int,fileId:int,fileName:String,isGroup:int,compress:int = 2,compressType:int=0,groupType:int = 1):ByteArray{
 			byteArray.position = 0;
 			if(byteArray.position>BaseFileVO.fileHeadStrLength){

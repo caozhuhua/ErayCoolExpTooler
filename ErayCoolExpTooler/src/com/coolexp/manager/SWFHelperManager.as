@@ -65,7 +65,7 @@ package com.coolexp.manager
 			var secert:int = keyVO.key_1*keyVO.key_2;
 			for(var i:int = 0,l:int = ba.length;i<l;++i){
 				var ch:int = ba[i];
-				trace(ch);
+				//trace(ch);
 				ch = ch ^secert;
 				ba[i] = ch;
 			}
@@ -77,7 +77,7 @@ package com.coolexp.manager
 				var ch:int = ba[i];
 				ch = ch ^secert;
 				ba[i] = ch;
-				trace(ch);
+				//trace(ch);
 			}
 			FilePackManager.getInstance().saveFile(filePath,ba);
 		}

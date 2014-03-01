@@ -33,13 +33,16 @@ package com.coolexp.manager
 		 */		
 		public function packGameRes(file:File,fileName:String):void{
 			var list:Array = getFileList(file);
-			var f:File,fileVO:SimpleFileVO;
+			var f:File,fileVO:*;
 			var fileList:Array = [];
 			for(var i:int = 0,l:int = list.length;i<l;++i){
 				f = list[i];
 				fileVO = SimpleFileVO.parseFile(f);
 				if(fileVO!=null){
-					
+					if(fileVO is ByteArray){
+						fileList.push(fileVO); 
+						continue;
+					}
 				}else{
 					fileVO = BaseFileVO.parse(getFileData(f)) as SimpleFileVO;
 				}
@@ -61,10 +64,12 @@ package com.coolexp.manager
 			var ba:ByteArray;
 			for(var i:int = 0,l:int = a.length;i<l;++i){
 				f = a[i];
-				filePath = f.nativePath;
-				ba = this.getFileData(f);
-				f.deleteFile();
-				this.saveFile(filePath+ext,ba);
+				if(f.name.indexOf(".dat")<0){
+					filePath = f.nativePath;
+					ba = this.getFileData(f);
+					f.deleteFile();
+					this.saveFile(filePath+ext,ba);
+				}
 			}
 		}
 		public function unEncode(file:File,isDel:Boolean):void{
@@ -145,12 +150,13 @@ package com.coolexp.manager
 		 * @param ba
 		 * 
 		 */		
-		public function saveFile(path:String,ba:ByteArray):void{
+		public function saveFile(path:String,ba:ByteArray):File{
 			var file:File = new File(path);
 			var fs:FileStream = new FileStream();
 			fs.open(file,FileMode.WRITE);
 			fs.writeBytes(ba);
 			fs.close();
+			return file;
 		}
 		/**
 		 * 得到文件夹下的所有文件，形成一个数组 
@@ -158,7 +164,7 @@ package com.coolexp.manager
 		 * @return 
 		 * 
 		 */		
-		private function getFileList(file:File):Array{
+		public function getFileList(file:File):Array{
 			var list:Array = [];
 			getFileFromDic(file,list);
 			

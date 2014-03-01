@@ -11,6 +11,7 @@
 			import com.coolexp.manager.AnimationPackager;
 			import com.coolexp.manager.DataModel;
 			import com.coolexp.manager.EventManager;
+			import com.coolexp.manager.FilePackManager;
 			import com.coolexp.manager.ToolerCheck;
 			import com.coolexp.vo.BaseFileVO;
 			import com.coolexp.vo.GroupFileVO;
@@ -19,6 +20,7 @@
 			
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
+			import mx.controls.Image;
 			import mx.core.IFlexDisplayObject;
 			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
@@ -27,6 +29,7 @@
 			private static const fileHeadStrLength:int = 9;
 			private static const FILE_HEAD_STR:String = "ERAYGAMES";
 			private var offset:Point;
+			private var nameOffset:Point;
 			private var currentRole:UIComponent;
 			private var currentXML:XML;
 			private var g:GroupFileVO;
@@ -102,6 +105,7 @@
 				loader.loadBytes(swfBa,lc);
 				var rootName:String = currentXML.name();
 				var offsetX:Number,offsetY:Number;
+				var oNX:Number = 0,oNY:Number= 0;
 				if(rootName=="TextureAtlas"){
 					isEffect = true;
 				}else{
@@ -111,6 +115,8 @@
 					delete currentXML.TextureAtlas.SubTexture;
 					offsetX = currentXML.TextureAtlas.@offsetX;
 					offsetY = currentXML.TextureAtlas.@offsetY;
+					oNX = currentXML.TextureAtlas.@offsetNaX;
+					oNY = currentXML.TextureAtlas.@offsetNaY;
 					var nodeXML:XML = new XML(currentXML.nodes);
 					DataModel.getInstance().nodeList = convertNodeToList(nodeXML);
 					nodeList.dataProvider = DataModel.getInstance().nodeList;
@@ -121,8 +127,25 @@
 				}
 				offsetXValue.text = offsetX.toString();
 				offsetYValue.text = offsetY.toString();
+				offsetXNValue.text = oNX.toString();
+				offsetYNValue.text = oNY.toString();
 				offset = new Point(offsetX,offsetY);
+				nameOffset = new Point(oNX,oNY);
 				trace(currentXML.toXMLString());
+				showNameOffsetTxt();
+			}
+			private function showNameOffsetTxt():void{
+				if(!isEffect){
+					offsetXNValue.visible = true;
+					offsetYNValue.visible = true;
+					this.nameTxt.visible = true;
+					nameOffset.x = nameTxt.x = Number(offsetXNValue.text);
+					nameOffset.y = nameTxt.y = Number(offsetYNValue.text);
+				}else{
+					offsetXNValue.visible = false;
+					offsetYNValue.visible = false;
+					this.nameTxt.visible = false;
+				}
 			}
 			protected function onCompleteHandler(event:Event):void
 			{
@@ -149,6 +172,7 @@
 					currentRole.x = offset.x;
 					currentRole.y = offset.y;
 					container.addElement(currentRole);
+					this.showNameOffsetTxt();
 				}
 			}
 			
@@ -156,6 +180,11 @@
 				if(currentRole){
 					offset.x = currentRole.x = Number(offsetXValue.text);
 					offset.y = currentRole.y = Number(offsetYValue.text);
+					if(!this.isEffect){
+						nameOffset.x = nameTxt.x = Number(offsetXNValue.text);
+						nameOffset.y = nameTxt.y = Number(offsetYNValue.text);
+					}
+					
 				}else{
 					Alert.show("还没初始化");
 				}
@@ -239,6 +268,8 @@
 				var fv:String = currentXML.TextureAtlas.@fv;
 				
 				xmlString+=('<TextureAtlas imagePath="'+imagePath);
+				xmlString+= '"offsetNaX="'+this.nameOffset.x +' ';
+				xmlString+= '"offsetNaY="'+this.nameOffset.y +' ';
 				xmlString+=('" t="'+t+'" isflash="'+isFlash+'" fv="'+fv+'" offsetX="'+offset.x+'" offsetY="'+offset.y+'"/>');
 				xmlString+=DataModel.getInstance().convertListToXML().toXMLString();
 				xmlString+='</root>';
@@ -342,6 +373,55 @@
 				file.removeEventListener(Event.SELECT,onSelectAnimationFileHandler);
 				AnimationPackager.getInstance().packAnimationFile(file,this.currentPackageType,checkDelete.selected);
 			}
+			private var isHaveBg:Boolean;
+			protected function addBackgroundHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(isHaveBg){
+					bgContainer.removeAllElements();
+					isHaveBg = false;
+					bgBtn.label = "添加背景";
+				}else{
+					var file:File = new File();
+					file.addEventListener(Event.SELECT,onSelectImageBGHandler);
+					file.browse([new FileFilter("Images","*.png;*.jpg")]);
+				}
+			}
+			private function onSelectImageBGHandler(e:Event):void{
+				var file:File = e.target as File;
+				if(file){
+					file.addEventListener(Event.SELECT,onSelectImageBGHandler);
+					var ba:ByteArray = FilePackManager.getInstance().getFileData(file);
+					var image:Image = new Image();
+					
+					image.source = ba;
+					image.addEventListener(MouseEvent.MOUSE_DOWN,onMouseHandler);
+					image.addEventListener(MouseEvent.MOUSE_UP,onUpHandler);
+					bgContainer.removeAllElements();
+					bgContainer.addElement(image);
+					isHaveBg = true;
+					bgBtn.label = "取消参考";
+				}
+			}
+			
+		
+			private var image:Image;
+			protected function onMouseHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				image = event.currentTarget as Image;
+				if(image){
+					image.startDrag();
+				}
+			}
+			
+			protected function onUpHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(image){
+					image.stopDrag();
+				}
+			}
 			
 		]]>
 	</fx:Script>
@@ -363,11 +443,20 @@
 						<s:Button label="选择动画文件" click="selecEraySWFHandler(event)" />
 						<s:TextInput id="fileNameTxt" width="200"></s:TextInput>
 						<s:Button label="拆分" click="disolveHandler(event)" />
+						<s:Button label="添加背景" id="bgBtn" click="addBackgroundHandler(event)" />
 						<s:Button label="导出" click="exportHandler(event)"></s:Button>
 					</s:HGroup>
 					
 				</s:HGroup>
-				<s:Panel width="100%" height="100%" >
+				<s:Panel width="100%" height="100%">
+					<s:Group id="bgContainer">
+						
+					</s:Group>
+					<s:Group x="410" y="527">
+						<s:Label id="nameTxt" text="名字名字名字名字" >
+							
+						</s:Label>
+					</s:Group>
 					<s:BorderContainer x="410" y="527" id="container" width="10" height="10">
 						<s:backgroundFill> 
 							<s:SolidColor 
@@ -379,17 +468,34 @@
 			</s:VGroup>
 			<s:VGroup width="25%" height="100%">
 				<s:Panel width="100%" title="偏移坐标修改" height="100">
-					<s:VGroup width="100%" height="100%" paddingLeft="10" paddingTop="10">
-						<s:HGroup width="100%">
-							<s:Label text="OffsetX:" />
-							<s:TextInput id="offsetXValue" width="50"></s:TextInput>
-						</s:HGroup>
-						<s:HGroup width="100%">
-							<s:Label text="OffsetY:" />
-							<s:TextInput id="offsetYValue" width="50"></s:TextInput>
-						</s:HGroup>
-					</s:VGroup>
-					<s:Button label="更新" x="150" width="50" y="35" click="updateHandler(event)"></s:Button>
+					<s:HGroup width="100%" height="100%" >
+						
+						<s:BorderContainer width="50%" height="100%">
+							<s:VGroup width="100%" paddingLeft="5" paddingTop="5">
+								<s:HGroup width="100%">
+									<s:Label text="OffsetX:" />
+									<s:TextInput id="offsetXValue" width="50"></s:TextInput>
+								</s:HGroup>
+								<s:HGroup width="100%">
+									<s:Label text="OffsetY:" />
+									<s:TextInput id="offsetYValue" width="50"></s:TextInput>
+								</s:HGroup>
+							</s:VGroup>
+						</s:BorderContainer>
+						<s:BorderContainer width="50%"  height="100%">
+							<s:VGroup width="100%" paddingLeft="5" paddingTop="5">
+								<s:HGroup width="100%">
+									<s:Label text="OffsetX(n):" />
+									<s:TextInput id="offsetXNValue" width="50"></s:TextInput>
+								</s:HGroup>
+								<s:HGroup width="100%">
+									<s:Label text="OffsetY(n):" />
+									<s:TextInput id="offsetYNValue" width="50"></s:TextInput>
+								</s:HGroup>
+							</s:VGroup>
+						</s:BorderContainer>
+					</s:HGroup>
+					<s:Button label="更新" x="215" width="50" y="-28" click="updateHandler(event)"></s:Button>
 				</s:Panel>
 				<s:VGroup width="100%" height="100%">
 					<s:HGroup width="100%" height="50" verticalAlign="middle" paddingLeft="5">

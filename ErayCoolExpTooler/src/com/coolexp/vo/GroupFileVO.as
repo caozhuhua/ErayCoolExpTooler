@@ -18,8 +18,13 @@ package com.coolexp.vo
 			ba.writeUnsignedInt(isGroup);
 			ba.writeUnsignedInt(fileNum);
 			for(var i:int = 0;i<fileNum;++i){
-				var simpleFileVO:SimpleFileVO = fileList[i] as SimpleFileVO;
-				var byteArray:ByteArray = simpleFileVO.toByteArray();
+				var byteArray:ByteArray = null;
+				if(fileList[i] is ByteArray){
+					byteArray = ByteArray(fileList[i]);
+				}else{
+					var simpleFileVO:SimpleFileVO = fileList[i] as SimpleFileVO;
+					byteArray = simpleFileVO.toByteArray();
+				}
 				ba.writeUnsignedInt(byteArray.length);
 				ba.writeBytes(byteArray);
 			}
