@@ -10,7 +10,7 @@ package com.coolexp.vo
 		public var fileHeadString:String;
 		public var fileLength:int;
 		/**
-		 *1,代表swf,2代表sound3,JPG文件4,PNG文件,5代码XML7,代表DAT二进制 11.eray后缀名文件  20，edat文件，21，XML+PNG动画文件26,erayswf文件，27,初始化文件组合
+		 *1,代表swf,2代表sound3,JPG文件4,PNG文件,5代码XML7,代表DAT二进制 11.eray后缀名文件  20，edat文件，21，XML+PNG动画文件26,erayswf文件，27,初始化文件组合, 28,bitmapswf文件
 		 */		
 		public var fileType:int;
 		public var fileId:int;

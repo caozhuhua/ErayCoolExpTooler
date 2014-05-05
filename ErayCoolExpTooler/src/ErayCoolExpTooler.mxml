@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
-					   xmlns:s="library://ns.adobe.com/flex/spark"  showStatusBar="false" creationComplete="initCompleteHandler(event)"
+					   xmlns:s="library://ns.adobe.com/flex/spark" frameRate="36"  showStatusBar="false" creationComplete="initCompleteHandler(event)"
 					   xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="1100" minHeight="700" maxWidth="1100" maxHeight="700">
 	
 	<fx:Script>
 		<![CDATA[
 			import com.coolexp.events.ActionEvent;
 			import com.coolexp.items.AddNewItem;
+			import com.coolexp.items.EXPSpriteMovieClip;
 			import com.coolexp.items.ShowTipsInfoItem;
 			import com.coolexp.manager.AnimationPackager;
 			import com.coolexp.manager.DataModel;
@@ -17,6 +18,7 @@
 			import com.coolexp.vo.GroupFileVO;
 			import com.coolexp.vo.NodeVO;
 			import com.coolexp.vo.SimpleFileVO;
+			import com.coolexp.vo.XMLItemVO;
 			
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
@@ -38,14 +40,16 @@
 			private var loaderSWF:LoaderInfo;
 			private var isEffect:Boolean;
 			private var ext:String = ".erayswf.dat";
+			private var bitmapExt:String = ".eraybitmapswf.dat";
 			
 			private var currentPackageType:int;
+			private var isNewAnimaton:Boolean;
 			protected function selecEraySWFHandler(event:MouseEvent):void
 			{
 				// TODO Auto-generated method stub
 				var file:File = new File();
 				file.addEventListener(Event.SELECT,onSelectHandler);
-				file.browse([new FileFilter("动画文件","*"+ext)]);
+				file.browse([new FileFilter("动画文件","*"+ext+";*"+bitmapExt)]);
 			}
 			private function clear():void{
 				DataModel.getInstance().nodeList = null;
@@ -80,10 +84,132 @@
 			private function praseFile(ba:ByteArray):void{
 				var fileVO:BaseFileVO = BaseFileVO.parse(ba);
 				if(fileVO.isGroup==2){
-					parsAnimationFile(fileVO as GroupFileVO);
+					if(fileVO.fileType==26){
+						isNewAnimaton = false;
+						parsAnimationFile(fileVO as GroupFileVO);
+					}else if(fileVO.fileType==28){
+						isNewAnimaton = true;
+						parseBitmapAnimation(fileVO as GroupFileVO);
+						//Alert.show("暂时不支持");
+					}
 				}else{
 					Alert.show("不是动画文件");
 				}
+			}
+			private var linkClassPrefix:String = "com.eray.swc.animation.";
+			private function parseBitmapAnimation(fileVO:GroupFileVO):void{
+				var a:Array = fileVO.fileList;
+				var xml:XML;
+				var swfBa:ByteArray = null;
+				for(var i:int = 0,l:int = a.length;i<l;++i){
+					var simpleFileVO:SimpleFileVO = a[i];
+					if(simpleFileVO.fileType==5){
+						currentXML = new XML(simpleFileVO.fileBa.toString());
+					}else{
+						swfBa = simpleFileVO.fileBa;
+					}
+				}
+				//1, effect 0 role animation
+				var isEffectInt:int = currentXML.animation.@isEffect;
+				if(isEffectInt ==1){
+					this.isEffect = true;
+				}else{
+					this.isEffect = false;
+				}
+				var loader:Loader = new Loader();
+				var lc:LoaderContext = new LoaderContext();
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE,onBitmapSWFCompleteHandler);
+				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR,loaderIOErrorHandler);
+				lc.allowCodeImport = true;
+				loader.loadBytes(swfBa,lc);
+			}
+			private function getBitmapDic():void{
+				bitmapDic = new Dictionary();
+				var a:Array = [];
+				var animaName:String = currentXML.@name;
+				for each(var n:XML in currentXML.pair.children()){
+					var cls:String = n.@cls;
+					if(a.indexOf(cls)<0){
+						//com.eray.swc.animation.Animation1002_move
+						var className:String = linkClassPrefix+animaName+"_"+cls;
+						var IMAGE_BITMAP:Class = loaderSWF.applicationDomain.getDefinition(className) as Class;
+						bitmapDic[cls] = new IMAGE_BITMAP();
+					}
+				}
+				if(this.isEffect){
+					
+				}else{
+					playNodeName("wait");
+					DataModel.getInstance().nodeList = convertNodeToList(new XML(currentXML.nodes));
+					nodeList.dataProvider = DataModel.getInstance().nodeList;
+				}
+			}
+			private var spriteMCList:Array = [];
+			private function playNodeName(nodeName:String):void{
+				if(this.hasEventListener(Event.ENTER_FRAME)){
+					this.removeEventListener(Event.ENTER_FRAME,onEnterFrameHandler);
+				}
+				this.addEventListener(Event.ENTER_FRAME,onEnterFrameHandler);
+				spriteMCList = [];
+				offset = new Point();
+				offset.x = currentXML.animation.@offsetX;
+				offset.y = currentXML.animation.@offsetY;
+				this.nameOffset = new Point();
+				nameOffset.x = currentXML.animation.@offsetNaX;
+				nameOffset.y = currentXML.animation.@offsetNaY;
+				offsetXValue.text = offset.x.toString();
+				offsetYValue.text = offset.y.toString();
+				offsetXNValue.text = nameOffset.x.toString();
+				offsetYNValue.text = nameOffset.y.toString();
+				showNameOffsetTxt();
+				getXMLAndTextByNodeName(nodeName);
+			}
+			private function convertXMLTOArray(xml:XML):Array{
+				var mList:Array = [];
+				for each(var node:XML  in xml.children()){
+					var obj:XMLItemVO = XMLItemVO.parseXML(node);
+					mList.push(obj);
+				}
+				return mList;
+			}
+			private function getXMLAndTextByNodeName(nodeName:String):void{
+				var xml:XML;
+				for each(var n:XML in currentXML.pair.children()){
+					var na:String = n.@name;
+					if(nodeName==na){
+						var cls:String = n.@cls;
+						xml = getXMLByCls(n.@cls);
+						if(xml){
+							var mList:Array = convertXMLTOArray(xml);
+							var bd:BitmapData = bitmapDic[cls];
+							var expMovieClip:EXPSpriteMovieClip = new EXPSpriteMovieClip(bd,mList);
+							spriteMCList.push(expMovieClip);
+							container.removeAllElements();
+							currentRole = new UIComponent();
+							currentRole.addChild(expMovieClip);
+							currentRole.x = offset.x;
+							currentRole.y = offset.y;
+							container.addElement(currentRole);
+						}
+					}
+				}
+			}
+			private function getXMLByCls(cls:String):XML{
+				var animaName:String = currentXML.@name;
+				for each(var n:XML in currentXML.textures.children()){
+					var pathImage:String = n.@imagePath;
+					if(pathImage==animaName+"_"+cls+".png"){
+						return n;
+					}
+				}
+				return null;
+			}
+			private var bitmapDic:Dictionary;
+			protected function onBitmapSWFCompleteHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				loaderSWF = event.currentTarget as LoaderInfo;
+				getBitmapDic();
 			}
 			private function parsAnimationFile(fileVO:GroupFileVO):void{
 				g = fileVO;
@@ -324,7 +450,11 @@
 			protected function seeAnimationHandler(event:ActionEvent):void
 			{
 				// TODO Auto-generated method stub
-				showAnimationByNode(event.key);
+				if(isNewAnimaton){
+					playNodeName(event.key);
+				}else{
+					showAnimationByNode(event.key);
+				}
 			}
 			
 			protected function loaderIOErrorHandler(event:IOErrorEvent):void
@@ -420,6 +550,19 @@
 				// TODO Auto-generated method stub
 				if(image){
 					image.stopDrag();
+				}
+			}
+			
+			
+			
+			protected function onEnterFrameHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				if(spriteMCList){
+					for(var i:int = 0,l:int = spriteMCList.length;i<l;++i){
+						var expMovieClip:EXPSpriteMovieClip = spriteMCList[i];
+						expMovieClip.render();
+					}
 				}
 			}
 			

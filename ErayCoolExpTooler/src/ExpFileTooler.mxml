@@ -6,6 +6,7 @@
 		<![CDATA[
 			import com.coolexp.manager.AnimationPackager;
 			import com.coolexp.manager.FilePackManager;
+			import com.coolexp.manager.LogManager;
 			import com.coolexp.manager.SWFHelperManager;
 			import com.coolexp.vo.KeyVO;
 			
@@ -20,6 +21,7 @@
 			protected function initWindowHandler(event:FlexEvent):void
 			{
 				// TODO Auto-generated method stub
+				LogManager.getInstance().init(logTxt);
 			}
 			
 			protected function packInitGameRes(event:MouseEvent):void
@@ -147,10 +149,30 @@
 				// TODO Auto-generated method stub
 				SWFHelperManager.getInstance().unKnowSWF(val,KeyVO.create(int(key_1.text),int(key_2.text)));
 			}
+			private function packNewAnimation(val:int):void{
+				var file:File = new File();
+				pckType = val;
+				file.addEventListener(Event.SELECT,onSelectNewAnimHandler);
+				if(pckType==2){
+					file.browseForDirectory("选择文件夹");
+				}else{
+					file.browse([new FileFilter("原始文件","*"+AnimationPackager.NODE_XML_EXT)]);
+				}
+			}
+			
+			protected function onSelectNewAnimHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				var file:File = event.target as File;
+				if(file){
+					file.removeEventListener(Event.SELECT,onSelectNewAnimHandler);
+					AnimationPackager.getInstance().packNewAnimation(file,pckType,heritAnimation.selected);
+				}
+			}
 			
 		]]>
 	</fx:Script>
-	<s:HGroup width="100%" height="100%" paddingLeft="5" paddingTop="5" paddingBottom="5" paddingRight="5">
+	<s:VGroup width="100%" height="100%" paddingLeft="5" paddingTop="5" paddingBottom="5" paddingRight="5">
 		<s:BorderContainer width="100%" height="100%" borderVisible="false">
 			<s:Panel width="200" height="100" title="打包游戏初始化资源">
 				<s:TextInput x="10" y="10" width="180" text="GameResdata" id="gfileName" />
@@ -191,8 +213,14 @@
 					</s:HGroup>
 				</s:VGroup>
 			</s:Panel>
+			<s:Panel x="500" width="200" height="100" y="110" title="打包新动画">
+				<s:CheckBox label="删除源文件"   y="10" x="20" id="selectAnimation" selected="true" />
+				<s:CheckBox label="继承旧动画"   y="10" x="100" id="heritAnimation" selected="true" />
+				<s:Button x="20" y="40" click="packNewAnimation(1)" label="单文件" />
+				<s:Button x="120" y="40" click="packNewAnimation(2)" label="多文件" />
+			</s:Panel>
 			
 		</s:BorderContainer>
-		
-	</s:HGroup>
+		<s:TextArea id="logTxt" editable="false" width="100%" />
+	</s:VGroup>
 </s:WindowedApplication>
