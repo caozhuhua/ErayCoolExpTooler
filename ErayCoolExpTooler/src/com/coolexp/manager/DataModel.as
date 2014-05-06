@@ -20,6 +20,7 @@ package com.coolexp.manager
 			}
 			return _instance;
 		}
+		[Bindable]
 		public var nodeList:ArrayCollection;
 		
 		public function convertListToXML():XML{

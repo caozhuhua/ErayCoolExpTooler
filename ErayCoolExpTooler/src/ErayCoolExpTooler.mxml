@@ -8,6 +8,7 @@
 			import com.coolexp.events.ActionEvent;
 			import com.coolexp.items.AddNewItem;
 			import com.coolexp.items.EXPSpriteMovieClip;
+			import com.coolexp.items.NodeItemRender;
 			import com.coolexp.items.ShowTipsInfoItem;
 			import com.coolexp.manager.AnimationPackager;
 			import com.coolexp.manager.DataModel;
@@ -98,6 +99,7 @@
 			}
 			private var linkClassPrefix:String = "com.eray.swc.animation.";
 			private function parseBitmapAnimation(fileVO:GroupFileVO):void{
+				g = fileVO;
 				var a:Array = fileVO.fileList;
 				var xml:XML;
 				var swfBa:ByteArray = null;
@@ -137,7 +139,7 @@
 					}
 				}
 				if(this.isEffect){
-					
+					playNodeName("effect");
 				}else{
 					playNodeName("wait");
 					DataModel.getInstance().nodeList = convertNodeToList(new XML(currentXML.nodes));
@@ -174,9 +176,11 @@
 			}
 			private function getXMLAndTextByNodeName(nodeName:String):void{
 				var xml:XML;
+				var isGet:Boolean = false;
 				for each(var n:XML in currentXML.pair.children()){
 					var na:String = n.@name;
 					if(nodeName==na){
+						isGet = true;
 						var cls:String = n.@cls;
 						xml = getXMLByCls(n.@cls);
 						if(xml){
@@ -192,6 +196,9 @@
 							container.addElement(currentRole);
 						}
 					}
+				}
+				if(!isGet){
+					Alert.show("没有"+nodeName+"节点动画");
 				}
 			}
 			private function getXMLByCls(cls:String):XML{
@@ -323,9 +330,22 @@
 						list.addItem(NodeVO.parse(node));
 					}
 				}
+				list = reArrangeList(list);
 				return list;
 			}
 			
+			private function reArrangeList(list:ArrayCollection):ArrayCollection{
+				var b:ArrayCollection = new ArrayCollection();
+				for(var i:int = 0;i<list.length;i++){
+					var ob:NodeVO = list.getItemAt(i) as NodeVO;
+					if(ob.key!="wait"&&ob.key!="move"){
+						b.addItem(ob);
+					}else{
+						b.addItemAt(ob,0);
+					}
+				}
+				return b;
+			}
 			protected function addNewNodeHandler(event:MouseEvent):void
 			{
 				// TODO Auto-generated method stub
@@ -350,6 +370,7 @@
 				PopUpManager.centerPopUp(tipInfoCheck);
 				ToolerCheck.getInstance().check();
 				this.enabled = false;
+				
 			}
 			
 			protected function deleteHanlder(event:ActionEvent):void
@@ -379,13 +400,30 @@
 			}
 			protected function exportHandler(event:Event):void{
 				var xmlString:String = "";
-				if(isEffect){
-					xmlString = getEffectXMLString();
+				if(!isNewAnimaton){
+					if(isEffect){
+						xmlString = getEffectXMLString();
+					}else{
+						xmlString = getAnimationXMLString();
+					}
+					saveFile(xmlString);
 				}else{
-					xmlString = getAnimationXMLString();
+					saveNewAnimation();
 				}
-				saveFile(xmlString);
 			}
+			private function saveNewAnimation():void{
+				var xml:XML = this.currentXML;
+				xml.animation.@offsetX = this.offset.x;
+				xml.animation.@offsetY = this.offset.y;
+				xml.animation.@offsetNaX = this.nameOffset.x;
+				xml.animation.@offsetNaY = this.nameOffset.y;
+				if(!isEffect){
+					delete xml.nodes;
+					xml.appendChild(DataModel.getInstance().convertListToXML());
+				}
+				saveFile(xml.toXMLString());
+			}
+		
 			private function getAnimationXMLString():String{
 				var xmlString:String = "<root>";
 				var imagePath:String = currentXML.TextureAtlas.@imagePath;
@@ -410,6 +448,11 @@
 			}
 			private function saveFile(xml:String):void{
 				var fileName:String = StringUtil.trim(fileNameTxt.text);
+				if(this.isNewAnimaton){
+					if(fileName.indexOf(AnimationPackager.NEW_ANIMATION_PREFIX)<0){
+						fileName = AnimationPackager.NEW_ANIMATION_PREFIX+fileName;
+					}
+				}
 				g.fileName = fileName;
 				var a:Array = g.fileList;
 				for(var i:int = 0,l:int = a.length;i<l;++i){
@@ -464,16 +507,20 @@
 			}
 			private function disolveHandler(e:Event):void{
 				if(g){
-					var folder:String = g.fileName.replace(ext,"");
-					folder = folder.replace(".erayswf","");
-					var a:Array = g.fileList;
-					var simpleFileVO:SimpleFileVO;
-					for(var i:int = 0,l:int = a.length;i<l;++i){
-						simpleFileVO = a[i];
-						var filePath:String = this.basePath+folder+"\\"+simpleFileVO.fileName;
-						saveDisolveFile(simpleFileVO.fileBa,filePath);
+					if(!isNewAnimaton){
+						var folder:String = g.fileName.replace(ext,"");
+						folder = folder.replace(".erayswf","");
+						var a:Array = g.fileList;
+						var simpleFileVO:SimpleFileVO;
+						for(var i:int = 0,l:int = a.length;i<l;++i){
+							simpleFileVO = a[i];
+							var filePath:String = this.basePath+folder+"\\"+simpleFileVO.fileName;
+							saveDisolveFile(simpleFileVO.fileBa,filePath);
+						}
+						Alert.show("拆分至"+this.basePath+folder);
+					}else{
+						Alert.show("新动画不提供此功能");
 					}
-					Alert.show("拆分至"+this.basePath+folder);
 				}else{
 					Alert.show("请先选择动画文件");
 				}

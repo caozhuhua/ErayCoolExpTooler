@@ -180,9 +180,30 @@ package com.coolexp.manager
 		}
 		private var isHerit:Boolean;
 		public function packNewAnimation(file:File,type:int,_isHerit:Boolean = true):void{
+			isHerit = _isHerit;
 			if(type==1){
-				isHerit = _isHerit;
 				readXMLFile(file);
+			}else{
+				var f:File;
+				var b:Array = file.getDirectoryListing();
+				for(var i:int = 0,l:int = b.length;i<l;++i){
+					f = b[i];
+					if(f.isDirectory){
+						getXMLDatFile(f);
+					}
+				}
+			}
+		}
+		private function getXMLDatFile(file:File):void{
+			var f:File;
+			var b:Array = file.getDirectoryListing();
+			for(var i:int = 0,l:int = b.length;i<l;++i){
+				f = b[i];
+				if(!f.isDirectory){
+					if(f.name.indexOf(NODE_XML_EXT)>=0){
+						readXMLFile(f);
+					}
+				}
 			}
 		}
 		private function getOldAnimationFileXML(basePath:String,prefix:String):Object{
@@ -283,6 +304,7 @@ package com.coolexp.manager
 				if(swfFile.exists){
 					var swfByte:ByteArray = FilePackManager.getInstance().getFileData(swfFile);
 					saveBitmapSWFFile(basePath,prefix,totalXMLBa,swfByte);
+					LogManager.getInstance().log(basePath+prefix+".eraybitmapswf.dat生成Success");
 				}else{
 					LogManager.getInstance().log(basePath+prefix+"_pngs"+".swf没有生成");
 				}
@@ -290,6 +312,7 @@ package com.coolexp.manager
 				LogManager.getInstance().log(basePath+prefix+".eraybitmapswf.dat没有生成");
 			}
 		}
+		public static const NEW_ANIMATION_PREFIX:String = "ERAY_ANI_";
 		private function createPairXML(xml:XML,node:XML):XML{
 			for each(var n:XML in xml.children()){
 				var na:String = n.@name;
@@ -325,7 +348,7 @@ package com.coolexp.manager
 			fileBa.writeUnsignedInt(ba.length);
 			fileBa.writeBytes(ba);
 			
-			var file:File = new File(basePath+prefix+ERAY_BITMAP_SWF_DAT);
+			var file:File = new File(basePath+AnimationPackager.NEW_ANIMATION_PREFIX+prefix+ERAY_BITMAP_SWF_DAT);
 			var fs:FileStream = new FileStream();
 			fs.open(file,FileMode.WRITE);
 			fs.writeBytes(fileBa);
