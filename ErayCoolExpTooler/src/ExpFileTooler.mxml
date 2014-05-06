@@ -169,7 +169,78 @@
 					AnimationPackager.getInstance().packNewAnimation(file,pckType,heritAnimation.selected);
 				}
 			}
+			private var originalFile:File;
+			private var targetFile:File;
+			//1,源 2,目标
+			private var sType:int;
+			private function selectOldFolder(type:int):void{
+				sType = type;
+				var file:File = new File();
+				file.addEventListener(Event.SELECT,onSelectOrigiNalHandler);
+				file.browseForDirectory("选择文件夹");
+			}
 			
+			
+			protected function onSelectOrigiNalHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				var file:File = event.target as File;
+				if(file){
+					file.removeEventListener(Event.SELECT,onSelectOrigiNalHandler);
+					if(sType==1){
+						originalFile = file;
+						if(originalFile&&targetFile){
+							startCopy();
+						}
+					}else if(sType==2){
+						targetFile = file;
+						if(originalFile&&targetFile){
+							startCopy();
+						}
+					}
+				}
+			}
+			private function startCopy():void{
+				LogManager.getInstance().log("开始同步");
+				var a:Array = targetFile.getDirectoryListing();
+				for(var i:int = 0;i<a.length;i++){
+					var f:File = a[i];
+					if(f.isDirectory){
+						var isGet:Boolean = getFileFromOriginal(originalFile,f.name,f);
+						if(!isGet){
+							LogManager.getInstance().log(f.name+".erayswf.dat没有找到");
+						}
+					}
+				}
+				originalFile = null;
+				targetFile = null;
+				sType = 0;
+				LogManager.getInstance().log("同步结束");
+			}
+			private function getFileFromOriginal(tt:File,na:String,file:File):Boolean{
+				var a:Array = [];
+				getAllFile(tt,a);
+				for(var i:int = 0;i<a.length;i++){
+					var f:File = a[i];
+					if(f.name.indexOf(na)>=0){
+						var ba:ByteArray = FilePackManager.getInstance().getFileData(f);
+						FilePackManager.getInstance().saveFile(file.nativePath+"\\"+f.name,ba);
+						return true;
+					}
+				}
+				return false;
+			}
+			private function getAllFile(file:File,b:Array):void{
+				var a:Array = file.getDirectoryListing();
+				for(var i:int = 0;i<a.length;i++){
+					var f:File = a[i];
+					if(f.isDirectory){
+						getAllFile(f,b);
+					}else{
+						b.push(f);
+					}
+				}
+			}
 		]]>
 	</fx:Script>
 	<s:VGroup width="100%" height="100%" paddingLeft="5" paddingTop="5" paddingBottom="5" paddingRight="5">
@@ -218,6 +289,11 @@
 				<s:CheckBox label="继承旧动画"   y="10" x="100" id="heritAnimation" selected="true" />
 				<s:Button x="20" y="40" click="packNewAnimation(1)" label="单文件" />
 				<s:Button x="120" y="40" click="packNewAnimation(2)" label="多文件" />
+			</s:Panel>
+			
+			<s:Panel x="750" width="200" height="100"  y="110" title="同步erayswf.dat至新的动画目录">
+				<s:Button x="10" y="30" click="selectOldFolder(1)" label="原动画目录" />
+				<s:Button x="110" y="30" click="selectOldFolder(2)" label="新动画目录" />
 			</s:Panel>
 			
 		</s:BorderContainer>
