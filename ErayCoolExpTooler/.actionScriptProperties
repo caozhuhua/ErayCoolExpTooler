@@ -20,6 +20,12 @@
     <application path="ExpFileTooler.mxml">
       <airExcludes/>
     </application>
+    <application path="ExpMapEditor.mxml">
+      <airExcludes/>
+    </application>
+    <application path="ExpAnimationEditor.mxml">
+      <airExcludes/>
+    </application>
   </applications>
   <modules/>
   <buildCSSFiles/>

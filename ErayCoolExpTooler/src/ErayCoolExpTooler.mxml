@@ -134,8 +134,13 @@
 					if(a.indexOf(cls)<0){
 						//com.eray.swc.animation.Animation1002_move
 						var className:String = linkClassPrefix+animaName+"_"+cls;
-						var IMAGE_BITMAP:Class = loaderSWF.applicationDomain.getDefinition(className) as Class;
-						bitmapDic[cls] = new IMAGE_BITMAP();
+						try{
+							var IMAGE_BITMAP:Class = loaderSWF.applicationDomain.getDefinition(className) as Class;
+							bitmapDic[cls] = new IMAGE_BITMAP();
+						}catch(e:Error){
+							Alert.show(className+"没有找到");
+							return;
+						}
 					}
 				}
 				if(this.isEffect){
